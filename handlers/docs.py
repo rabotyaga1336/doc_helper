@@ -1,12 +1,12 @@
 # handlers/docs.py
 import sqlite3
-from config import DB_NAME
+from config import DB_PATH
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def get_documents(doc_type: str) -> list:
     """Получаем документы из БД по типу."""
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
         "SELECT name, file_path FROM documents WHERE type = ?",

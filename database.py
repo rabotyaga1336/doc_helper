@@ -1,15 +1,13 @@
 # database.py
 import sqlite3
 import os
-from config import DB_NAME, IMAGE_DIR
-
-# Создаем папку для изображений, если ее нет
-if not os.path.exists(IMAGE_DIR):
-    os.makedirs(IMAGE_DIR)
+from config import DB_PATH, IMAGE_DIR
+"""Инициализация базы данных"""
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 def init_db():
     """Создаем таблицы в базе данных."""
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Очищаем и заполняем таблицу новостей
@@ -58,7 +56,7 @@ def init_db():
 
 def seed_db():
     """Заполняем базу тестовыми данными."""
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Очищаем таблицы перед заполнением (для тестов)

@@ -2,7 +2,7 @@ from telegram.ext import (CommandHandler, MessageHandler,
                           filters, ConversationHandler)
 from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 import sqlite3
-from config import (DB_NAME, IMAGE_DIR, ADMIN_ID,
+from config import (DB_PATH, IMAGE_DIR, ADMIN_ID,
                     WAIT_IMAGE, WAIT_TITLE, WAIT_CONTENT)
 import os
 import logging
@@ -80,8 +80,9 @@ def handle_image(update, context):
 
     except Exception as e:
         logger.error(f"Ошибка в handle_image: {e}")
-        update.message.reply_text("❌ Ошибка при обработке изображения")
-        return WAIT_IMAGE
+
+    update.message.reply_text("Отправьте изображение или /skip")
+    return WAIT_IMAGE
 
 
 def save_news(update, context):
@@ -96,10 +97,17 @@ def save_news(update, context):
 
 
 def finish_news(update, context):
-    """Финальное сохранение новости"""
+    """Финальное сохранение"""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        if 'news_title' not in context.user_data:
+            update.message.reply_text("❌ Ошибка: не указан заголовок")
+            return ConversationHandler.END
+
+        # Подключение к БД
+        conn = sqlite3.connect("news_images/bot.db")
         cursor = conn.cursor()
+
+        # Сохранение в БД
         cursor.execute(
             "INSERT INTO news (title, content, image_path, date) VALUES (?, ?, ?, ?)",
             (
@@ -111,14 +119,17 @@ def finish_news(update, context):
         )
         conn.commit()
         update.message.reply_text("✅ Новость успешно добавлена!")
-        return ConversationHandler.END
+
     except Exception as e:
-        logger.error(f"Ошибка в finish_news: {e}")
-        update.message.reply_text("❌ Ошибка при сохранении новости")
-        return ConversationHandler.END
+        logger.error(f"Ошибка сохранения: {e}")
+        update.message.reply_text("❌ Ошибка при сохранении")
+
     finally:
-        conn.close()
+        if 'conn' in locals():
+            conn.close()
         context.user_data.clear()
+
+    return ConversationHandler.END
 
 
 def delete_news(update, context):
@@ -131,7 +142,7 @@ def delete_news(update, context):
         return
 
     try:
-        conn = sqlite3.connect(DB_NAME)
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # Получаем данные новости перед удалением
@@ -178,7 +189,7 @@ def cancel(update, context):
 def show_news_menu(update, context, force_new_message=False):
     """Улучшенное меню новостей"""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT id, title FROM news ORDER BY date DESC LIMIT 10"
@@ -189,11 +200,6 @@ def show_news_menu(update, context, force_new_message=False):
             [InlineKeyboardButton(f"📰 {title}", callback_data=f"news_{id_}")]
             for id_, title in news
         ]
-
-        if update.callback_query.from_user.id == ADMIN_ID:
-            keyboard.append(
-                [InlineKeyboardButton("➕ Добавить новость", callback_data="add_news")]
-            )
 
 
         if force_new_message or not hasattr(update.callback_query.message, 'text'):
@@ -228,7 +234,7 @@ def show_news_menu(update, context, force_new_message=False):
 def show_news_detail(update, context, news_id):
     """Показ полной новости с обработкой изображений"""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT title, content, image_path, date FROM news WHERE id = ?",
@@ -262,9 +268,6 @@ def show_news_detail(update, context, news_id):
                     callback_data=f"confirm_delete_{news_id}"
                 )]
             )
-        # Добавляем кнопку для перезапуска
-        keyboard.append([InlineKeyboardButton("🔄 Перезапустить", callback_data="start")])
-        keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data="back_to_news")])
 
         # Всегда отправляем новое сообщение
         if image_path and os.path.exists(os.path.join(IMAGE_DIR, image_path)):

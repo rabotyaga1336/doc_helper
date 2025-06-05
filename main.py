@@ -38,8 +38,6 @@ def start(update, context):
     )
 
 
-
-
 def button_click(update, context):
     query = update.callback_query
     data = query.data
@@ -67,7 +65,7 @@ def button_click(update, context):
     elif data == "add_news":
         add_news(update, context)
     elif data.startswith("news_"):
-        news_id = data.split("_")[1]
+        news_id = data.split("_")[2]
         show_news_detail(update, context, news_id)
     elif data.startswith("delete_"):
         delete_news(update, context)
@@ -100,10 +98,7 @@ def main():
         states={
             WAIT_IMAGE: [  # Ожидаем фото или команду /skip
                 MessageHandler(Filters.photo, handle_image),
-                CommandHandler('skip', handle_image),
-                # Добавляем обработчик для текста
-                MessageHandler(Filters.text & ~Filters.command, lambda update, context: update.message.reply_text(
-                    "Пожалуйста, отправьте изображение или /skip"))
+                CommandHandler('skip', handle_image)
             ],
             WAIT_TITLE: [  # Ожидаем текст заголовка
                 MessageHandler(Filters.text & ~Filters.command, save_news)
@@ -116,8 +111,6 @@ def main():
             CommandHandler('cancel', cancel),
             MessageHandler(Filters.regex('^🏠 Главное меню$'), start)
         ],  # Точки выхода из диалога
-    per_chat=True,  # Важно!
-    per_user=True   # Важно!
     ))
 
     updater.start_polling()
