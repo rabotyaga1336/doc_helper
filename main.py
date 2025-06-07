@@ -6,8 +6,8 @@ from telegram.ext import (Updater, CommandHandler, CallbackQueryHandler,
 from keyboards import main_menu, back_button
 from config import BOT_TOKEN, ADMIN_ID, WAIT_IMAGE, WAIT_TITLE, WAIT_CONTENT
 from handlers.docs import show_docs_menu, show_documents_list, send_document
-from handlers.news import show_news_menu, show_news_detail, confirm_delete, delete_news
-from handlers.admin import add_news, handle_image, save_news, finish_news, delete_news, cancel
+from handlers.news import (show_news_menu, show_news_detail, confirm_delete, delete_news,
+                           add_news, handle_image, save_news, finish_news, cancel)
 
 # Включаем логирование для отладки
 logging.basicConfig(
@@ -65,7 +65,7 @@ def button_click(update, context):
     elif data == "add_news":
         add_news(update, context)
     elif data.startswith("news_"):
-        news_id = data.split("_")[2]
+        news_id = data.split('_')[1]
         show_news_detail(update, context, news_id)
     elif data.startswith("delete_"):
         delete_news(update, context)

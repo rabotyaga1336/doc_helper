@@ -10,10 +10,6 @@ def main_menu(user_id=False):
         [InlineKeyboardButton("❓ Помощь", callback_data="help")]
     ]
 
-    # Добавляем кнопку для админа
-    if user_id:
-        keyboard.append([InlineKeyboardButton("➕ Добавить новость", callback_data="add_news")])
-
     return InlineKeyboardMarkup(keyboard)
 
 def get_main_reply_keyboard():
